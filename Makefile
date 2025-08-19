@@ -5,6 +5,7 @@ RG=RG-SIMPLON-CERTIF
 IMAGE = frontend
 VERSION = $(shell grep -oP 'version = "\K[^"]+' $(PYPROJECT))
 TAG = $(REGISTRY)/$(IMAGE):$(VERSION)
+PORT = 8501
 
 # Commandes
 .PHONY: help build tag push login deploy test clean
@@ -21,7 +22,7 @@ help:
 
 build:
 	pdm export -o requirements.txt --without-hashes
-	docker build -t $(IMAGE):$(VERSION) -t ingestion-service:latest .
+	docker build -t $(IMAGE):$(VERSION) -t $(IMAGE):latest .
 
 tag:
 	docker tag $(IMAGE):$(VERSION) $(TAG)
@@ -38,7 +39,7 @@ create-container:
 		--resource-group $(RG) \
 		--image $(REGISTRY)/$(IMAGE):$(VERSION) \
 		--environment cae-simplon-certif \
-		--target-port 8000 \
+		--target-port $(PORT) \
 		--ingress external \
 		--registry-server $(REGISTRY) \
 		--user-assigned "id-simplon-certif-acr-deployer" \
@@ -51,6 +52,8 @@ deploy-app:
 		--resource-group $(RG) \
 		--image $(REGISTRY)/$(IMAGE):$(VERSION)
 
+create: build tag login push create-container
+
 deploy: build tag login push deploy-app
 
 test:
@@ -59,3 +62,6 @@ test:
 clean:
 	docker rmi $(IMAGE):$(VERSION) || true
 	docker rmi $(TAG) || true
+
+run-local: 
+	docker run --env-file .env.container.local -p 8501:8501 --name frontend -d $(IMAGE):$(VERSION)
