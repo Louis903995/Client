@@ -1,11 +1,7 @@
-properties:
-  scale:
-    minReplicas: 0
-    maxReplicas: 5
-    rules:
-      - name: http-scaler
-        custom:
-          type: http
-          metadata:
-            concurrentRequests: "50"
-            scale.down.window: "PT30M"   # 30 minutes avant extinction
+scale:
+  rules:
+    - name: http-scaler
+      type: http
+      metadata:
+        concurrentRequests: "50"
+        scale.down.window: "PT30M"

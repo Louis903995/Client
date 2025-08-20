@@ -27,7 +27,7 @@ def page_upload():
             if response.status_code == 200:
                 st.session_state.upload_result = ("success", "Image uploadée avec succès!")
             else:
-                st.session_state.upload_result = ("error", f"Erreur lors de l'upload: {response.status_code}")
+                st.session_state.upload_result = ("error", f"Je n'arrive pas à interpréter le ticket [erreur {response.status_code}]")
             st.rerun()
     else:
         # Affiche le message (succès ou erreur) et propose de réinitialiser

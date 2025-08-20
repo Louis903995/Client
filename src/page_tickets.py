@@ -7,6 +7,7 @@ from datetime import datetime
 INGESTION_SERVICE_URL = os.environ["INGESTION_SERVICE_URL"]
 
 def page_tickets():
+    client_id = 255
     st.header("Affichage des tickets")
 
     # Champs calendrier
@@ -30,19 +31,19 @@ def page_tickets():
         st.info(f"Paramètres appliqués : ?{'&'.join(qs_display)}")
 
     # Appel de l'API
-    url = f"{INGESTION_SERVICE_URL}/clients/255/tickets"
+    url = f"{INGESTION_SERVICE_URL}/clients/{client_id}/tickets"
     try:
         response = requests.get(url, params=params)
         if response.status_code == 200:
             data = response.json()
-            st.write(f"Nombre de tickets récupérés : {len(data)}")  # <--- Affichage du nombre de tickets
+            st.write(f"Nombre de tickets récupérés : {len(data)}") 
 
             tickets = []
             ticket_lines = {}
             for ticket in data:
                 date_ticket = datetime.strptime(ticket["date_heure_ticket"], "%Y-%m-%dT%H:%M:%S")
                 date_formatted = date_ticket.strftime("%d/%m/%Y %H:%M")
-                label = f"Ticket {ticket['ticket_id']} - {date_formatted} - Enseigne {ticket['enseigne_id']}"
+                label = f"Ticket du {date_formatted} - {ticket['enseigne_nom']}"
                 tickets.append({"label": label, "id": ticket["ticket_id"]})
                 lines = []
                 for ligne in ticket.get("lignes", []):
