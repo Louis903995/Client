@@ -1,5 +1,6 @@
 from dotenv import load_dotenv
 import streamlit as st
+from page_budgets import page_budgets
 from page_tickets import page_tickets
 from upload_page import page_upload
 from courbe_page import page_courbe
@@ -42,6 +43,7 @@ def main():
         "Accueil": "home",
         "Nouvelle étiquette": "upload",
         "Tickets": "tickets",
+        "Budgets": "budgets",
         "Afficher la courbe": "courbe",
         "Déconnexion": "logout",
     }
@@ -49,7 +51,7 @@ def main():
     choix = st.sidebar.radio("Navigation", list(menu_items.keys()))
 
     if menu_items[choix] == "home":
-        st.title("Bienvenue dans l'application privée Streamlit")
+        st.title("Contre la vie chère.")
         st.write("Utilisez le menu à gauche pour naviguer.")
     elif menu_items[choix] == "upload":
         page_upload()
@@ -57,6 +59,8 @@ def main():
         page_tickets()
     elif menu_items[choix] == "courbe":
         page_courbe()
+    elif menu_items[choix] == "budgets":
+        page_budgets()
     elif menu_items[choix] == "logout":
         page_logout()
 
