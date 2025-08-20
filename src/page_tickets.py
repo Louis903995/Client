@@ -6,9 +6,10 @@ from datetime import datetime
 
 INGESTION_SERVICE_URL = os.environ["INGESTION_SERVICE_URL"]
 
+
 def page_tickets():
-    client_id = 255
-    st.header("Affichage des tickets")
+    client_id = st.session_state.get("username", None)
+    st.header("Vos tickets")
 
     # Champs calendrier
     col1, col2 = st.columns(2)
@@ -27,8 +28,7 @@ def page_tickets():
         params["to"] = date_to.strftime("%Y-%m-%d")
         qs_display.append(f"to={date_to.strftime('%d/%m/%Y')}")
 
-    if qs_display:
-        st.info(f"Paramètres appliqués : ?{'&'.join(qs_display)}")
+
 
     # Appel de l'API
     url = f"{INGESTION_SERVICE_URL}/clients/{client_id}/tickets"
@@ -36,35 +36,47 @@ def page_tickets():
         response = requests.get(url, params=params)
         if response.status_code == 200:
             data = response.json()
-            st.write(f"Nombre de tickets récupérés : {len(data)}") 
+            st.write(f"Nombre de tickets récupérés : {len(data)}")
 
             tickets = []
             ticket_lines = {}
             for ticket in data:
-                date_ticket = datetime.strptime(ticket["date_heure_ticket"], "%Y-%m-%dT%H:%M:%S")
+                date_ticket = datetime.strptime(
+                    ticket["date_heure_ticket"], "%Y-%m-%dT%H:%M:%S"
+                )
                 date_formatted = date_ticket.strftime("%d/%m/%Y %H:%M")
                 label = f"Ticket du {date_formatted} - {ticket['enseigne_nom']}"
                 tickets.append({"label": label, "id": ticket["ticket_id"]})
                 lines = []
                 for ligne in ticket.get("lignes", []):
-                    lines.append({
-                        "Produit": ligne["libelle_produit"],
-                        "Catégorie": ligne["nom_categorie_produit"],
-                        "Quantité": ligne["quantite"],
-                        "Prix unitaire": ligne["prix_unitaire"],
-                        "Montant ligne": ligne["montant_total_ligne"],
-                        "Montant total ticket": ticket["montant_total_ticket"],
-                    })
+                    lines.append(
+                        {
+                            "Produit": ligne["libelle_produit"],
+                            "Catégorie": ligne["nom_categorie_produit"],
+                            "Quantité": ligne["quantite"],
+                            "Prix unitaire": f"{ligne['montant_total_ligne']:,.2f}".replace(
+                                ",", "X"
+                            )
+                            .replace(".", ",")
+                            .replace("X", ".")
+                            if ligne["montant_total_ligne"] is not None
+                            else "",
+                            "Montant TTC": f"{ligne['montant_total_ligne']:,.2f}".replace(
+                                ",", "X"
+                            )
+                            .replace(".", ",")
+                            .replace("X", "."),
+                        }
+                    )
                 ticket_lines[ticket["ticket_id"]] = lines
 
             if tickets:
                 choice = st.selectbox(
                     "Sélectionnez un ticket pour voir le détail",
                     tickets,
-                    format_func=lambda t: t["label"]
+                    format_func=lambda t: t["label"],
                 )
                 selected_ticket_id = choice["id"]
-                st.subheader(f"Détail du ticket {selected_ticket_id}")
                 lines = ticket_lines[selected_ticket_id]
                 if lines:
                     df = pd.DataFrame(lines)
@@ -74,6 +86,8 @@ def page_tickets():
             else:
                 st.info("Aucun ticket à afficher.")
         else:
-            st.error(f"Erreur lors de la récupération de la table : {response.status_code}")
+            st.error(
+                f"Erreur lors de la récupération de la table : {response.status_code}"
+            )
     except Exception as e:
         st.error(f"Erreur d'appel API: {e}")

@@ -19,6 +19,7 @@ def fake_azure_auth():
             if submit:
                 if username and password:
                     st.session_state["authenticated"] = True
+                    st.session_state["username"] = username
                     st.success("Authentifié !")
                     st.rerun()
                 else:

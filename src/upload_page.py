@@ -4,8 +4,9 @@ import requests
 
 INGESTION_SERVICE_URL = os.environ["INGESTION_SERVICE_URL"]
 
+
 def page_upload():
-    client_id = 255
+    client_id = st.session_state.get("username", None)
 
     # On utilise session_state pour garder le message après l'upload
     if "upload_result" not in st.session_state:
@@ -16,8 +17,7 @@ def page_upload():
     # Si pas encore d'upload, on affiche l'uploader
     if st.session_state.upload_result is None:
         uploaded_file = st.file_uploader(
-            "Choisissez une image de ticket de caisse",
-            type=["png", "jpg", "jpeg"]
+            "Choisissez une image de ticket de caisse", type=["png", "jpg", "jpeg"]
         )
         if uploaded_file is not None:
             files = {"file": (uploaded_file.name, uploaded_file, uploaded_file.type)}
@@ -25,9 +25,15 @@ def page_upload():
                 f"{INGESTION_SERVICE_URL}/clients/{client_id}/tickets", files=files
             )
             if response.status_code == 200:
-                st.session_state.upload_result = ("success", "Image uploadée avec succès!")
+                st.session_state.upload_result = (
+                    "success",
+                    "Image uploadée avec succès!",
+                )
             else:
-                st.session_state.upload_result = ("error", f"Je n'arrive pas à interpréter le ticket [erreur {response.status_code}]")
+                st.session_state.upload_result = (
+                    "error",
+                    f"Je n'arrive pas à interpréter le ticket [erreur {response.status_code}]",
+                )
             st.rerun()
     else:
         # Affiche le message (succès ou erreur) et propose de réinitialiser
