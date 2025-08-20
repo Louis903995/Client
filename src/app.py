@@ -41,10 +41,10 @@ def main():
 
     menu_items = {
         "Accueil": "home",
-        "Nouvelle étiquette": "upload",
+        "Ajouter un ticket": "upload",
         "Tickets": "tickets",
         "Budgets": "budgets",
-        "Afficher la courbe": "courbe",
+        "Dépenses et prévisions": "courbe",
         "Déconnexion": "logout",
     }
     st.sidebar.title("Menu")

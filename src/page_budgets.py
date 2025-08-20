@@ -31,7 +31,7 @@ def nom_categorie(categorie_id: int) -> str:
 
 def page_budgets():
     client_id = st.session_state.get("username", None)
-    st.header("Budgets")
+    st.title("Budgets")
 
     # Création d'une liste de noms pour le selectbox
     categorie_noms = [cat["nom"] for cat in categories]
@@ -57,10 +57,12 @@ def page_budgets():
             montant_formate = f"{data:,.2f}".replace(",", " ").replace(".", ",")
             st.markdown(
                 f"""
-                <div style='font-size: 2.5em; font-weight: bold; color: #2E86C1;'>
-            url = f"{INGESTION_SERVICE_URL}/clients/{client_id}/depenses?categorie_id={categorie_id}"
-                    Dépenses depuis {jour_cible(debut_periode_client.get(client_id, 1))} {nom_categorie(categorie_id)} {montant_formate} €
-                </div>
+                <span style='font-size: 1.5em; font-weight: bold; '>
+                    Dépenses depuis le {jour_cible(debut_periode_client.get(client_id, 1))}:
+                </span>                
+                <span style='font-size: 1.5em; font-weight: bold; color: #2E86C1;'>
+                    {montant_formate} €
+                </span>
                 """,
                 unsafe_allow_html=True,
             )

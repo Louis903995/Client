@@ -12,7 +12,7 @@ def page_upload():
     if "upload_result" not in st.session_state:
         st.session_state.upload_result = None
 
-    st.header("Upload d'un ticket de caisse")
+    st.title("Chargement d'un ticket de caisse")
 
     # Si pas encore d'upload, on affiche l'uploader
     if st.session_state.upload_result is None:

@@ -9,7 +9,7 @@ INGESTION_SERVICE_URL = os.environ["INGESTION_SERVICE_URL"]
 
 def page_tickets():
     client_id = st.session_state.get("username", None)
-    st.header("Vos tickets")
+    st.title("Vos tickets")
 
     # Champs calendrier
     col1, col2 = st.columns(2)
