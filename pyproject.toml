@@ -5,7 +5,7 @@ description = "Default template for PDM package"
 authors = [
     {name = "Louis", email = "louis@moises.fr"},
 ]
-dependencies = ["requests>=2.32.4", "streamlit>=1.48.1", "plotly>=6.3.0", "dotenv>=0.9.9", "streamlit-aggrid>=1.1.8"]
+dependencies = ["requests>=2.32.4", "streamlit>=1.48.1", "plotly>=6.3.0", "dotenv>=0.9.9"]
 requires-python = ">=3.12"
 readme = "README.md"
 license = {text = "MIT"}
