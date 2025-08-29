@@ -8,25 +8,45 @@ from courbe_page import page_courbe
 load_dotenv(dotenv_path=".env", override=False)
 
 
+import requests
+
+API_BASE_URL = "http://localhost:8501"  
+
+def api_authenticate(email: str):
+    """Récupère un client par email """
+    response = requests.get(f"{API_BASE_URL}/clients")  
+    if response.status_code == 200:
+        clients = response.json()
+        for client in clients:
+            if client["email_client"] == email:
+                return client
+    return None
+
+
 def fake_azure_auth():
     if "authenticated" not in st.session_state:
         st.session_state["authenticated"] = False
+
     if not st.session_state["authenticated"]:
         st.title("Authentification requise")
         with st.form("auth_form"):
-            username = st.text_input("Nom d'utilisateur Azure")
-            password = st.text_input("Mot de passe", type="password")
+            email = st.text_input("Email")
+            password = st.text_input("Mot de passe", type="password")  # optionnel pour la démo
             submit = st.form_submit_button("Se connecter")
-            if submit:
-                if username and password:
-                    st.session_state["authenticated"] = True
-                    st.session_state["username"] = username
-                    st.success("Authentifié !")
-                    st.rerun()
-                else:
-                    st.error("Identifiants invalides.")
-        st.stop()
 
+            if submit:
+                if email and password:
+                    client = api_authenticate(email)
+                    if client:
+                        st.session_state["authenticated"] = True
+                        st.session_state["client"] = client
+                        st.success(f"Authentifié en tant que {client['prenom_client']} {client['nom_client']}")
+                        st.rerun()
+                    else:
+                        st.error("Client introuvable.")
+                else:
+                    st.error("Veuillez remplir tous les champs.")
+        st.stop()
 
 def page_logout():
     st.header("Déconnexion")
@@ -51,7 +71,8 @@ def main():
     choix = st.sidebar.radio("Navigation", list(menu_items.keys()))
 
     if menu_items[choix] == "home":
-        st.title("Contre la vie chère.")
+        client = st.session_state["client"]
+        st.title(f"Bonjour {client['prenom_client']} {client['nom_client']}")
         st.write("Utilisez le menu à gauche pour naviguer.")
     elif menu_items[choix] == "upload":
         page_upload()
@@ -63,6 +84,7 @@ def main():
         page_budgets()
     elif menu_items[choix] == "logout":
         page_logout()
+
 
 
 if __name__ == "__main__":
