@@ -71,22 +71,49 @@ def page_courbe():
     # Graphique
     fig = go.Figure()
 
+    # Dépenses constatées
     fig.add_trace(go.Scatter(
         x=df["Semaine"], y=df["Dépenses constatées"],
         mode="lines+markers", name="Dépenses constatées", line=dict(color="blue")
     ))
 
+    # Dépenses prédites
     fig.add_trace(go.Scatter(
         x=df["Semaine"], y=df["Dépenses prédites"],
         mode="lines+markers", name="Dépenses prédites", line=dict(color="orange", dash="dot")
     ))
 
+    # --- Ligne pointillée entre dernier constaté et premier prédit ---
+    # Dernier point constaté
+    last_constate_idx = len(depenses_constatees_aligned) - 1
+    for i, val in enumerate(depenses_constatees_aligned[::-1]):
+        if not np.isnan(val):
+            last_constate_idx = len(depenses_constatees_aligned) - 1 - i
+            break
+    # Premier point prédit
+    first_predite_idx = 0
+    for i, val in enumerate(depenses_predites_aligned):
+        if not np.isnan(val):
+            first_predite_idx = i
+            break
+    # Ajouter la ligne pointillée si ce n'est pas le même point
+    if last_constate_idx != first_predite_idx:
+        fig.add_trace(go.Scatter(
+            x=[semaines[last_constate_idx], semaines[first_predite_idx]],
+            y=[depenses_constatees_aligned[last_constate_idx], depenses_predites_aligned[first_predite_idx]],
+            mode="lines",
+            line=dict(color="blue", dash="dot"),
+            name="Projection"
+        ))
+
+    # Ligne budget
     fig.add_trace(go.Scatter(
         x=[df["Semaine"].iloc[0], df["Semaine"].iloc[-1]],
         y=[budget, budget],
         mode="lines", name="Budget", line=dict(color="red", dash="dash")
     ))
 
+    # Point de dépassement
     if depassement_x is not None:
         fig.add_trace(go.Scatter(
             x=[depassement_x], y=[budget],
