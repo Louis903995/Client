@@ -1,28 +1,54 @@
+import requests
 import streamlit as st
-import plotly.graph_objs as go
 import pandas as pd
+import plotly.graph_objects as go
+import os
 from datetime import datetime, timedelta
+import numpy as np
+
+INGESTION_SERVICE_URL = os.environ["INGESTION_SERVICE_URL"]
 
 def page_courbe():
     st.title("Dépenses et prévisions - Août 2025")
 
-    semaines_str = [
-        "2025-08-04",
-        "2025-08-11",
-        "2025-08-18",
-        "2025-08-25",
-        "2025-09-01",
-    ]
-    semaines = [datetime.strptime(d, "%Y-%m-%d") for d in semaines_str]
-    depenses_constatees = [210, 320, 450, None, None]
-    depenses_predites   = [None, None, 450, 520, 600]
-    budget = 500
+    # ID client
+    client_id = 1
+    url = f"{INGESTION_SERVICE_URL}/clients/{client_id}/allures"
 
-    depenses = []
-    for c, p in zip(depenses_constatees, depenses_predites):
-        depenses.append(c if c is not None else p)
+    # Récupération des données via l'API
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+        data = response.json()
+        # Extraire les dates et valeurs
+        depenses_constatees = [item["v"] for item in data.get("depense_constate", [])]
+        depenses_constatees_dates = [datetime.fromisoformat(item["d"]) for item in data.get("depense_constate", [])]
+        depenses_predites = [item["v"] for item in data.get("depense_predite", [])]
+        depenses_predites_dates = [datetime.fromisoformat(item["d"]) for item in data.get("depense_predite", [])]
+    except Exception as e:
+        st.error(f"Erreur lors de la récupération des données API : {e}")
+        depenses_constatees = []
+        depenses_constatees_dates = []
+        depenses_predites = []
+        depenses_predites_dates = []
 
-    # Calcul de la date de dépassement (interpolation linéaire)
+    # Créer la liste complète des semaines en combinant les dates constatées et prédites
+    semaines = sorted(list(set(depenses_constatees_dates + depenses_predites_dates)))
+
+    # Compléter les listes pour correspondre aux semaines
+    depenses_constatees_dict = dict(zip(depenses_constatees_dates, depenses_constatees))
+    depenses_predites_dict = dict(zip(depenses_predites_dates, depenses_predites))
+
+    depenses_constatees_aligned = [depenses_constatees_dict.get(d, np.nan) for d in semaines]
+    depenses_predites_aligned = [depenses_predites_dict.get(d, np.nan) for d in semaines]
+
+    # Dépenses combinées (priorité constatée, sinon prédite)
+    depenses = [c if not np.isnan(c) else p for c, p in zip(depenses_constatees_aligned, depenses_predites_aligned)]
+
+    # Budget du client 
+    budget = st.session_state["client"]["budget_client"]    
+    
+    # Calcul du point de dépassement
     depassement_x = None
     depassement_label = None
     for i in range(len(depenses)-1):
@@ -34,13 +60,15 @@ def page_courbe():
             depassement_label = depassement_x.strftime("%A %d %B %Y")
             break
 
+    # DataFrame
     df = pd.DataFrame({
         "Semaine": semaines,
-        "Dépenses constatées": depenses_constatees,
-        "Dépenses prédites": depenses_predites,
+        "Dépenses constatées": depenses_constatees_aligned,
+        "Dépenses prédites": depenses_predites_aligned,
         "Dépenses": depenses
     })
 
+    # Graphique
     fig = go.Figure()
 
     fig.add_trace(go.Scatter(
@@ -59,37 +87,22 @@ def page_courbe():
         mode="lines", name="Budget", line=dict(color="red", dash="dash")
     ))
 
-    # Point de dépassement sur l'axe x (hors légende, avec date affichée à côté)
     if depassement_x is not None:
         fig.add_trace(go.Scatter(
-            x=[depassement_x], y=[0],
+            x=[depassement_x], y=[budget],
             mode="markers+text",
             marker=dict(size=18, color="red", symbol="circle"),
             text=[depassement_label],
             textposition="bottom center",
-            showlegend=False  # Retire ce point de la légende
+            showlegend=False
         ))
         st.info(f"Le budget sera dépassé autour du {depassement_label}")
 
-    # Axe x lisible
-    tickvals = df["Semaine"].tolist()
-    ticktext = [
-        "Semaine du 4 août",
-        "Semaine du 11 août",
-        "Semaine du 18 août",
-        "Semaine du 25 août",
-        "Semaine du 1er sept."
-    ]
     fig.update_layout(
         title="Suivi des dépenses en août 2025",
         xaxis_title="Date",
         yaxis_title="Montant (€)",
-        xaxis=dict(
-            tickmode="array",
-            tickvals=tickvals,
-            ticktext=ticktext,
-            type="date"
-        ),
+        xaxis=dict(type="date"),
         legend=dict(x=0.02, y=0.98),
         template="plotly_white"
     )
